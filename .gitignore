@@ -1,20 +1,9 @@
-data/
-*.jsonl
-*.jsonl.gz
-*.csv
-*.arb
-rules.json
-taxonomy.json
-pred*.jsonl
-
-.venv/
-venv/
 .env
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+data/*
+!data/.gitkeep
 
-*.index
-*.faiss
-*.pkl
-chroma_db/

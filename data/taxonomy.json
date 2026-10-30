@@ -1,0 +1,8 @@
+{
+  "categories": {
+    "access": ["парол", "вход", "логин", "password", "login", "access"],
+    "billing": ["оплат", "счет", "платеж", "invoice", "billing", "charge"],
+    "technical": ["ошиб", "не работает", "сбой", "error", "broken", "failed"]
+  }
+}
+
