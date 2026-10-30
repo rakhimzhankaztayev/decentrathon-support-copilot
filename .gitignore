@@ -1,0 +1,3 @@
+mkdir grand-support-copilot
+cd grand-support-copilot
+git init
