@@ -1,3 +1,2 @@
-{"id":"demo-1","subject":"Не могу войти","text":"Забыл пароль, помогите восстановить доступ"}
-{"id":"demo-2","subject":"Платеж","text":"Оплата еще не отображается в аккаунте"}
-
+{"ticket_id":"demo-1","kind":"complaint","lang":"ru","messages":[{"role":"player","text":"Arman_Petrov оскорблял меня и мою семью в чате, скрины есть, 2.1 ОП","attachments":2}]}
+{"ticket_id":"demo-2","kind":"report","lang":"ru","messages":[{"role":"player","text":"Хочу уточнить правила сервера"}]}

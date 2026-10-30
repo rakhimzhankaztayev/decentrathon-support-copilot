@@ -1,23 +1,18 @@
-"""Text normalization, including safe cp1251 recovery."""
+"""Text normalization and repair of legacy Kazakh cp1251 substitutions."""
 
-from __future__ import annotations
-
-import re
-from typing import Union
-
-
-def decode_text(value: Union[str, bytes]) -> str:
-    """Decode bytes as UTF-8, falling back to cp1251 for legacy exports."""
-    if isinstance(value, str):
-        return value
-    try:
-        return value.decode("utf-8")
-    except UnicodeDecodeError:
-        return value.decode("cp1251", errors="replace")
+CP1251_KAZAKH_MAP = str.maketrans({
+    "ќ": "қ", "Ќ": "Қ",
+    "ґ": "ғ", "Ґ": "Ғ",
+    "ѕ": "ң", "Ѕ": "Ң",
+    "є": "ә", "Є": "Ә",
+    "ј": "ө", "Ј": "Ө",
+    "ў": "ұ", "Ў": "Ұ",
+    "ї": "ү", "Ї": "Ү",
+})
 
 
-def normalize_text(value: Union[str, bytes]) -> str:
-    """Normalize whitespace and case while preserving readable text."""
-    text = decode_text(value).replace("\u00a0", " ")
-    text = re.sub(r"\s+", " ", text)
-    return text.strip().casefold()
+def normalize_kazakh_cp1251(text: str) -> str:
+    """Fix broken cp1251 Kazakh characters."""
+    if not text:
+        return ""
+    return text.translate(CP1251_KAZAKH_MAP)

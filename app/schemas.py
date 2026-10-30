@@ -1,57 +1,56 @@
-"""Shared request and response contracts."""
+"""Shared request and response contracts for triage."""
 
-from __future__ import annotations
-
-from typing import Any, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class Ticket(BaseModel):
-    """Incoming support ticket."""
+class MessageItem(BaseModel):
+    model_config = ConfigDict(extra="allow")
 
-    model_config = ConfigDict(extra="ignore")
-
-    id: Optional[str] = None
-    subject: str = ""
-    text: str = Field(min_length=1)
-    customer_id: Optional[str] = None
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    role: Literal["player", "reported_player", "admin"] = "player"
+    text: str
+    ts: Optional[str] = None
+    attachments: Optional[int] = 0
 
 
-class Classification(BaseModel):
-    category: str
-    priority: str
-    confidence: float = Field(ge=0, le=1)
+class TriageRequest(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
+    ticket_id: Optional[str] = None
+    kind: Literal["complaint", "report"]
+    created_at: Optional[str] = None
+    region: Optional[str] = None
+    server_lang: Optional[str] = None
+    lang: Optional[str] = None
+    reporter_hash: Optional[str] = None
+    reported_hash: Optional[str] = None
+    reported_nick: Optional[str] = None
+    rule_refs_raw: Optional[str] = None
+    images_count: Optional[int] = 0
+    messages: List[MessageItem]
 
 
-class DuplicateMatch(BaseModel):
-    ticket_id: str
-    similarity: float = Field(ge=0, le=1)
+class ExtractedFacts(BaseModel):
+    nickname: Optional[str] = None
+    rule_refs: List[str] = Field(default_factory=list)
+    has_evidence: bool = False
+    server: Optional[str] = None
 
 
-class DeduplicationResult(BaseModel):
-    is_spam: bool = False
-    is_duplicate: bool = False
-    matches: list[DuplicateMatch] = Field(default_factory=list)
-
-
-class RetrievedDocument(BaseModel):
-    title: str
-    content: str
-    score: float = Field(ge=0, le=1)
-    source: str
-
-
-class DraftResponse(BaseModel):
-    answer: str
-    facts: list[str] = Field(default_factory=list)
-    citations: list[str] = Field(default_factory=list)
-    requires_human_review: bool = False
+class DraftReply(BaseModel):
+    lang: str
+    text: str
+    cited: List[str] = Field(default_factory=list)
 
 
 class TriageResponse(BaseModel):
-    ticket_id: Optional[str] = None
-    classification: Classification
-    deduplication: DeduplicationResult
-    draft: DraftResponse
+    lang: str
+    category: str
+    priority: Literal["p0", "p1", "p2", "p3"]
+    is_spam_or_duplicate: bool
+    extracted: ExtractedFacts
+    draft_reply: DraftReply
+    needs_human: bool
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasons: List[str] = Field(default_factory=list)

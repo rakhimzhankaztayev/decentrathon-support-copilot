@@ -1,48 +1,40 @@
-"""FastAPI entrypoint."""
-
-from __future__ import annotations
-
-from functools import lru_cache
+"""FastAPI service for support ticket triage."""
 
 from fastapi import FastAPI
 
-from app.config import get_settings
-from app.rag.generator import DraftGenerator
-from app.rag.retriever import RulesRetriever
-from app.schemas import Ticket, TriageResponse
-from app.triage.classifier import TicketClassifier
-from app.triage.deduplicator import Deduplicator
+from app.core.preprocessor import normalize_kazakh_cp1251
+from app.rag.generator import generate_rag_response
+from app.schemas import TriageRequest, TriageResponse
+from app.triage.classifier import classify_ticket
 
-app = FastAPI(title=get_settings().app_name)
+app = FastAPI(title="Grand Mobile Support Copilot", version="0.1.0")
 
 
-@lru_cache
-def _components() -> tuple[TicketClassifier, Deduplicator, RulesRetriever, DraftGenerator]:
-    settings = get_settings()
-    retriever = RulesRetriever(settings.rules_path, settings.max_retrieved_documents)
-    return (
-        TicketClassifier(settings.taxonomy_path),
-        Deduplicator(settings.duplicate_similarity_threshold),
-        retriever,
-        DraftGenerator(retriever),
+async def process_single_ticket(request: TriageRequest) -> TriageResponse:
+    player_texts = [
+        normalize_kazakh_cp1251(message.text)
+        for message in request.messages
+        if message.role in ("player", "reported_player")
+    ]
+    full_text = "\n".join(player_texts)
+    triage_result = await classify_ticket(request, full_text)
+    rag_result = await generate_rag_response(
+        ticket=request,
+        normalized_text=full_text,
+        lang=triage_result["lang"],
+        category=triage_result["category"],
+    )
+    return TriageResponse(
+        **triage_result,
+        **rag_result,
     )
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
+async def health() -> dict:
     return {"status": "ok"}
 
 
 @app.post("/triage", response_model=TriageResponse)
-def triage(ticket: Ticket) -> TriageResponse:
-    classifier, deduplicator, retriever, generator = _components()
-    classification = classifier.classify(ticket)
-    deduplication = deduplicator.check(ticket)
-    documents = retriever.retrieve(ticket)
-    draft = generator.generate(ticket, classification, documents, deduplication)
-    return TriageResponse(
-        ticket_id=ticket.id,
-        classification=classification,
-        deduplication=deduplication,
-        draft=draft,
-    )
+async def triage_endpoint(request: TriageRequest) -> TriageResponse:
+    return await process_single_ticket(request)
